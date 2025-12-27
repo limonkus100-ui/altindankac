@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Altın Yağmuru</title>
+<style>
+body{margin:0;overflow:hidden;background:#0f172a;color:white;font-family:Arial}
+#menu,#gameOver,#adminPrompt{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    background:rgba(0,0,0,.9);
+}
+#hud{position:fixed;top:10px;left:10px;display:none}
+#adminBadge{position:fixed;top:10px;right:10px;color:#a855f7;display:none}
+#player{position:fixed;bottom:60px;font-size:40px;display:none}
+.item{position:absolute;font-size:30px}
+button,input{padding:10px 20px;font-size:18px;margin:5px}
+</style>
+</head>
+<body>
+
+<div id="menu">
+    <h1>🎮 Altın Yağmuru</h1>
+    <button onclick="startGame()">Başla</button>
+    <p>👑 Admin modu: 4 tuşu</p>
+</div>
+
+<div id="hud">
+    Skor: <span id="score">0</span> |
+    Can: <span id="lives">3</span>
+</div>
+
+<div id="adminBadge">👑 ADMIN MODE</div>
+<div id="player">🧍</div>
+
+<div id="adminPrompt" style="display:none">
+    <h3>Admin Şifresi</h3>
+    <input id="adminPass" type="password">
+    <button onclick="checkAdmin()">Giriş</button>
+    <p id="adminError" style="color:red"></p>
+</div>
+
+<div id="gameOver" style="display:none">
+    <h2>Oyun Bitti</h2>
+    <button onclick="location.reload()">Menü</button>
+</div>
+
+<script>
+/* ==== AYARLAR ==== */
+const ADMIN_PASSWORD="m12345";
+
+/* ==== OYUN DURUMU ==== */
+let score=0,lives=3;
+let admin=false;
+let running=false;
+let playerX=200;
+let left=false,right=false;
+let spawnTimer;
+
+/* ==== ELEMENTLER ==== */
+const player=document.getElementById("player");
+const scoreEl=document.getElementById("score");
+const livesEl=document.getElementById("lives");
+
+/* ==== OYUN ==== */
+function startGame(){
+    menu.style.display="none";
+    hud.style.display="block";
+    player.style.display="block";
+    score=0;lives=3;admin=false;
+    scoreEl.textContent=0;
+    livesEl.textContent=3;
+    adminBadge.style.display="none";
+    running=true;
+    spawnTimer=setInterval(spawnItem,700);
+    requestAnimationFrame(gameLoop);
+}
+
+function spawnItem(){
+    if(!running) return;
+    const el=document.createElement("div");
+    const bomb=Math.random()<0.3;
+    el.className="item";
+    el.textContent=bomb?"💣":"🟡";
+    el.style.left=Math.random()*(innerWidth-30)+"px";
+    el.style.top="0px";
+    document.body.appendChild(el);
+
+    let y=0;
+    const fall=setInterval(()=>{
+        y+=4;
+        el.style.top=y+"px";
+
+        if(y>innerHeight){
+            el.remove();clearInterval(fall);
+        }
+
+        if(Math.abs(parseInt(el.style.left)-playerX)<30 && y>innerHeight-120){
+            if(bomb && !admin){
+                lives--;
+                livesEl.textContent=lives;
+                if(lives<=0) endGame();
+            }else{
+                score++;
+                scoreEl.textContent=score;
+            }
+            el.remove();clearInterval(fall);
+        }
+    },16);
+}
+
+function gameLoop(){
+    if(!running) return;
+    if(left) playerX-=6;
+    if(right) playerX+=6;
+    playerX=Math.max(0,Math.min(innerWidth-40,playerX));
+    player.style.left=playerX+"px";
+    requestAnimationFrame(gameLoop);
+}
+
+function endGame(){
+    running=false;
+    clearInterval(spawnTimer);
+    gameOver.style.display="flex";
+}
+
+/* ==== KONTROLLER ==== */
+document.addEventListener("keydown",e=>{
+    if(e.key==="ArrowLeft"||e.key==="a") left=true;
+    if(e.key==="ArrowRight"||e.key==="d") right=true;
+    if(e.key==="4") adminPrompt.style.display="flex";
+});
+document.addEventListener("keyup",e=>{
+    if(e.key==="ArrowLeft"||e.key==="a") left=false;
+    if(e.key==="ArrowRight"||e.key==="d") right=false;
+});
+
+/* ==== ADMIN ==== */
+function checkAdmin(){
+    if(adminPass.value===ADMIN_PASSWORD){
+        admin=true;
+        livesEl.textContent="∞";
+        adminBadge.style.display="block";
+        adminPrompt.style.display="none";
+    }else{
+        adminError.textContent="Yanlış şifre";
+    }
+}
+</script>
+
+</body>
+</html>
